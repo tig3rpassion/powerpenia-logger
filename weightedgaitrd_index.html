@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Powerpenia Data Logger</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .status-box {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        
+        .status-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .status-text {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .sensor-data {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .sensor-card {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .sensor-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .sensor-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+            cursor: pointer;
+        }
+        
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+        }
+        
+        .btn-start {
+            background: #10b981;
+            color: white;
+        }
+        
+        .btn-start:hover:not(:disabled) {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4);
+        }
+        
+        .btn-stop {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .btn-stop:hover:not(:disabled) {
+            background: #dc2626;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(239, 68, 68, 0.4);
+        }
+        
+        .btn-download {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .btn-download:hover:not(:disabled) {
+            background: #2563eb;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .info-box {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 12px;
+            margin-top: 20px;
+            border-radius: 5px;
+            font-size: 13px;
+            color: #92400e;
+        }
+        
+        .recording-indicator {
+            display: none;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        
+        .recording-indicator.active {
+            display: block;
+        }
+        
+        .pulse {
+            width: 15px;
+            height: 15px;
+            background: #ef4444;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 1.5s infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        .data-count {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏃 Powerpenia Logger</h1>
+        <p class="subtitle">파워페니아 연구 데이터 수집기</p>
+        
+        <div class="status-box">
+            <div class="status-title">Status</div>
+            <div class="status-text" id="statusText">Ready to start recording</div>
+        </div>
+        
+        <div class="recording-indicator" id="recordingIndicator">
+            <span class="pulse"></span>
+            <span style="color: #ef4444; font-weight: bold;">RECORDING</span>
+        </div>
+        
+        <div class="sensor-data">
+            <div class="sensor-card">
+                <div class="sensor-label">Acc_Y (Vertical)</div>
+                <div class="sensor-value" id="accY">0.00</div>
+            </div>
+            <div class="sensor-card">
+                <div class="sensor-label">Gyro_X (Pitch)</div>
+                <div class="sensor-value" id="gyroX">0.00</div>
+            </div>
+            <div class="sensor-card">
+                <div class="sensor-label">Acc Magnitude</div>
+                <div class="sensor-value" id="accMag">0.00</div>
+            </div>
+            <div class="sensor-card">
+                <div class="sensor-label">Data Points</div>
+                <div class="sensor-value" id="dataCount">0</div>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label for="condition">Measurement Condition</label>
+            <select id="condition">
+                <option value="Normal">Normal Walking (정상 보행)</option>
+                <option value="Light_Load_1kg">Light Load - 1kg (가벼운 부하)</option>
+                <option value="Medium_Load_3kg">Medium Load - 3kg (중간 부하)</option>
+                <option value="Heavy_Load_5kg">Heavy Load - 5kg (무거운 부하)</option>
+                <option value="One_Hand_Load">One Hand Load (한 손 들기)</option>
+            </select>
+        </div>
+        
+        <button class="btn-start" id="startBtn" onclick="startRecording()">
+            ▶ START RECORDING
+        </button>
+        
+        <button class="btn-stop" id="stopBtn" onclick="stopRecording()" disabled>
+            ⏹ STOP RECORDING
+        </button>
+        
+        <button class="btn-download" id="downloadBtn" onclick="downloadData()" disabled>
+            💾 DOWNLOAD CSV
+        </button>
+        
+        <div class="info-box">
+            <strong>📱 Important:</strong> Please attach your phone to your lower back (L5 region) during walking. 
+            <br><br>
+            <strong>허리 뒤쪽(L5 부근)에 스마트폰을 고정하고 측정하세요.</strong>
+        </div>
+    </div>
+
+    <script>
+        let isRecording = false;
+        let dataPoints = [];
+        let accelerometer = null;
+        let gyroscope = null;
+        let startTime = null;
+        let samplingInterval = null;
+        
+        // 센서 초기화
+        function initSensors() {
+            if ('Accelerometer' in window && 'Gyroscope' in window) {
+                try {
+                    accelerometer = new Accelerometer({ frequency: 50 }); // 50Hz
+                    gyroscope = new Gyroscope({ frequency: 50 });
+                    
+                    accelerometer.addEventListener('reading', updateSensorDisplay);
+                    gyroscope.addEventListener('reading', updateSensorDisplay);
+                    
+                    return true;
+                } catch (error) {
+                    updateStatus('Sensor initialization failed: ' + error.message);
+                    return false;
+                }
+            } else {
+                updateStatus('Sensors not supported on this device');
+                return false;
+            }
+        }
+        
+        function updateSensorDisplay() {
+            if (accelerometer && gyroscope) {
+                document.getElementById('accY').textContent = accelerometer.y.toFixed(3);
+                document.getElementById('gyroX').textContent = gyroscope.x.toFixed(3);
+                
+                const accMag = Math.sqrt(
+                    accelerometer.x ** 2 + 
+                    accelerometer.y ** 2 + 
+                    accelerometer.z ** 2
+                ).toFixed(3);
+                document.getElementById('accMag').textContent = accMag;
+            }
+        }
+        
+        function startRecording() {
+            if (!initSensors()) {
+                alert('센서를 사용할 수 없습니다. HTTPS 연결 또는 센서 권한을 확인하세요.');
+                return;
+            }
+            
+            // 초기화
+            dataPoints = [];
+            startTime = Date.now();
+            isRecording = true;
+            
+            // UI 업데이트
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+            document.getElementById('downloadBtn').disabled = true;
+            document.getElementById('condition').disabled = true;
+            document.getElementById('recordingIndicator').classList.add('active');
+            
+            const condition = document.getElementById('condition').value;
+            updateStatus(`Recording: ${condition}`);
+            
+            // 센서 시작
+            accelerometer.start();
+            gyroscope.start();
+            
+            // 데이터 수집 (50Hz = 20ms)
+            samplingInterval = setInterval(collectData, 20);
+        }
+        
+        function collectData() {
+            if (!isRecording || !accelerometer || !gyroscope) return;
+            
+            const timestamp = (Date.now() - startTime) / 1000; // 초 단위
+            const condition = document.getElementById('condition').value;
+            
+            dataPoints.push({
+                timestamp: timestamp,
+                condition: condition,
+                acc_x: accelerometer.x,
+                acc_y: accelerometer.y,
+                acc_z: accelerometer.z,
+                gyro_x: gyroscope.x,
+                gyro_y: gyroscope.y,
+                gyro_z: gyroscope.z
+            });
+            
+            document.getElementById('dataCount').textContent = dataPoints.length;
+        }
+        
+        function stopRecording() {
+            isRecording = false;
+            
+            // 센서 중지
+            if (accelerometer) accelerometer.stop();
+            if (gyroscope) gyroscope.stop();
+            if (samplingInterval) clearInterval(samplingInterval);
+            
+            // UI 업데이트
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            document.getElementById('downloadBtn').disabled = false;
+            document.getElementById('condition').disabled = false;
+            document.getElementById('recordingIndicator').classList.remove('active');
+            
+            updateStatus(`Recording stopped. ${dataPoints.length} data points collected.`);
+        }
+        
+        function downloadData() {
+            if (dataPoints.length === 0) {
+                alert('No data to download');
+                return;
+            }
+            
+            // CSV 생성
+            let csv = 'Timestamp,Condition,Acc_X,Acc_Y,Acc_Z,Gyro_X,Gyro_Y,Gyro_Z\n';
+            
+            dataPoints.forEach(point => {
+                csv += `${point.timestamp},${point.condition},${point.acc_x},${point.acc_y},${point.acc_z},${point.gyro_x},${point.gyro_y},${point.gyro_z}\n`;
+            });
+            
+            // 파일 다운로드
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            const condition = document.getElementById('condition').value;
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+            const filename = `Gait_${condition}_${timestamp}.csv`;
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            updateStatus(`Downloaded: ${filename}`);
+        }
+        
+        function updateStatus(message) {
+            document.getElementById('statusText').textContent = message;
+        }
+        
+        // 페이지 로드 시
+        window.addEventListener('load', () => {
+            updateStatus('Ready to start recording');
+            
+            // HTTPS 확인
+            if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+                updateStatus('⚠️ Warning: Sensors require HTTPS connection');
+            }
+        });
+    </script>
+</body>
+</html>
